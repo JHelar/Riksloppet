@@ -1,26 +1,24 @@
-import { NONE } from 'phaser'
 import PartiLedare from '../objects/partiLedare'
 import Statist from '../objects/statist'
 
 export default class MainScene extends Phaser.Scene {
-  riksdagen : Phaser.Physics.Arcade.Group
+  riksdagen: Phaser.Physics.Arcade.Group
   spelare: PartiLedare
   powerups: Phaser.Physics.Arcade.Group
   hinder: Phaser.Physics.Arcade.Group
   kastbar: Phaser.Physics.Arcade.Group
-
   statist: Phaser.Physics.Arcade.Group
 
   goal = 2500
   cursors
 
-  vinnare : PartiLedare[]
+  vinnare: PartiLedare[]
 
   WIDTH: number
   HEIGHT: number
 
-  constructor() {
-    super({ key: 'MainScene' })
+  constructor(key: string) {
+    super({ key })
   }
 
   init() {
@@ -40,23 +38,7 @@ export default class MainScene extends Phaser.Scene {
     let mark = this.add.tileSprite(0, 0, this.goal, this.HEIGHT, 'gata')
     mark.setOrigin(0).setScrollFactor(1)
 
-    // Spelare och motspelare
-    this.spelare = new PartiLedare(this, 250, 200, 'vansterpartiet', this.input.keyboard.createCursorKeys())
-    let partier = [
-      this.spelare,
-      new PartiLedare(this, 150, 200, 'socialdemokraterna'),
-      new PartiLedare(this, 50, 200, 'miljöpartiet'),
-      new PartiLedare(this, 100, 300, 'sverigedemokraterna'),
-      new PartiLedare(this, 200, 300, 'moderaterna'),
-      new PartiLedare(this, 50, 400, 'liberalerna'),
-      new PartiLedare(this, 150, 400, 'kristdemokraterna'),
-      new PartiLedare(this, 250, 400, 'centern')
-    ]
-
-    this.riksdagen = new Phaser.Physics.Arcade.Group(this.physics.world, this, partier)
-    this.riksdagen.children.each((ledamot: any) => {
-      ledamot.setCollideWorldBounds(true)
-    })
+    this.riksdagen = new Phaser.Physics.Arcade.Group(this.physics.world, this, [])
 
     // Power ups och down
     this.powerups = new Phaser.Physics.Arcade.Group(this.physics.world, this)
@@ -77,6 +59,8 @@ export default class MainScene extends Phaser.Scene {
 
   create() {
     console.log('Main Scene')
+    // ToDo: Needs to changed to be determenistic in multiplayer.
+    // Look into seeding?
     for (let i = 0; i < 3; i++) {
       let hinder = this.hinder.create(
         Phaser.Math.Between(this.WIDTH / 2, this.goal),
@@ -87,7 +71,7 @@ export default class MainScene extends Phaser.Scene {
       hinder.setBodySize(170, 50)
       hinder.body.setOffset(0, 50)
       hinder.depth = hinder.y
-    }    
+    }
 
     let pos_top = this.WIDTH / 2
     let pos_bot = this.WIDTH / 2
@@ -95,26 +79,28 @@ export default class MainScene extends Phaser.Scene {
       pos_top = Phaser.Math.Between(pos_top + 50, pos_top + 120)
       pos_bot = Phaser.Math.Between(pos_bot + 50, pos_bot + 120)
 
-      let pwup : any
-      if (Phaser.Math.RND.integerInRange(0, 100) > 70) // Top 30 % is updut
-        pwup = this.powerups.create( 0, 0, 'peng')
-      else if(Phaser.Math.RND.integerInRange(0, 100) > 50) // Top 50-70 % is downdut
-        pwup = this.powerups.create( 0, 0, 'neddut')
-      else
-        pwup = null
+      let pwup: any
+      if (Phaser.Math.RND.integerInRange(0, 100) > 70)
+        // Top 30 % is updut
+        pwup = this.powerups.create(0, 0, 'peng')
+      else if (Phaser.Math.RND.integerInRange(0, 100) > 50)
+        // Top 50-70 % is downdut
+        pwup = this.powerups.create(0, 0, 'neddut')
+      else pwup = null
       let frame = Phaser.Math.RND.pick(['statist_kast', 'statist'])
       let top = new Statist(this, pos_top, 130, frame, pwup)
       this.statist.add(top, true)
 
       pwup = null
-      if (Phaser.Math.RND.integerInRange(0, 100) > 70) // Top 30 % is updut
-        pwup = this.powerups.create( 0, 0, 'peng')
-      else if(Phaser.Math.RND.integerInRange(0, 100) > 50) // Top 50-70 % is downdut
-        pwup = this.powerups.create( 0, 0, 'neddut')
-      else
-        pwup = null
+      if (Phaser.Math.RND.integerInRange(0, 100) > 70)
+        // Top 30 % is updut
+        pwup = this.powerups.create(0, 0, 'peng')
+      else if (Phaser.Math.RND.integerInRange(0, 100) > 50)
+        // Top 50-70 % is downdut
+        pwup = this.powerups.create(0, 0, 'neddut')
+      else pwup = null
       frame = Phaser.Math.RND.pick(['statist_kast', 'statist'])
-      let bot = new Statist(this, pos_top, this.HEIGHT-70, frame, pwup)
+      let bot = new Statist(this, pos_top, this.HEIGHT - 70, frame, pwup)
       this.statist.add(bot, true)
     }
 
@@ -134,34 +120,30 @@ export default class MainScene extends Phaser.Scene {
 
       if (this.vinnare.length == 0 && ledamot.x > most_x) {
         most_x = ledamot.x
-        this.cameras.main.centerOnX(most_x-150) // extra avstånd från mitten skärmen scrollar
+        this.cameras.main.centerOnX(most_x - 150) // extra avstånd från mitten skärmen scrollar
       }
 
       if (kill_line > ledamot.x) {
         this.riksdagen.remove(ledamot, true, true)
       }
-      
-      if (ledamot.x > this.goal){
+
+      if (ledamot.x > this.goal) {
         this.vinnare.push(ledamot)
-        this.riksdagen.remove(ledamot, true, true)        
+        this.riksdagen.remove(ledamot, true, true)
       }
     })
 
-    if (this.riksdagen.getLength() <= 0)
-      this.scene.start('PostScene')
+    if (this.riksdagen.getLength() <= 0) this.scene.start('PostScene')
   }
 
   powerupCollision(partiledare, powerup) {
-    if(powerup.key == 'peng')
-      partiledare.max_speed += 20
-    else if(powerup.key == 'neddut')
-      partiledare.max_speed -= 20
+    if (powerup.key == 'peng') partiledare.max_speed += 20
+    else if (powerup.key == 'neddut') partiledare.max_speed -= 20
     powerup.destroy()
   }
 
   statistCollision(partiledare, statist) {
-    partiledare.knocked_out = 1
-    statist.destroy()
+    statist.collidedWith(partiledare)
   }
 
   riksdagskollision(partiledare, annat) {
